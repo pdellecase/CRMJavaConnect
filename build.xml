@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+<project name="MSDCJavaConnect" default="main" basedir=".">
+	<!-- **** Set all Folders location *** -->
+	<!-- The value of a property is accessed via ${} -->
+	<!-- Project Source Folders -->
+	<property name="src.dir" location="src" />
+	<property name="discovery-stubs.dir" location="${src.dir}/com/cloudliner/integration/msdc11/stubs.discovery" />
+	<property name="organization-stubs.dir" location="${src.dir}/com/cloudliner/integration/msdc11/stubs.organization" />
+	<property name="lib.dir" location="lib" />
+	<property name="resource.dir" location="resources" />
+	<!-- Project Build Folders -->
+	<property name="build.dir" location="build" />
+	<property name="bin.dir" location="${build.dir}/bin" />
+	<property name="docs.dir" location="${build.dir}/docs" />
+	<property name="dist.dir" location="${build.dir}/dist" />
+	<!-- Temp Folders -->
+	<property name="temp.dir" location="temp" />
+
+	<!-- *** Create Project Classpath Container which can be used in the ant tasks *** -->
+	<path id="build.classpath">
+		<fileset dir="${lib.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<!-- *** Clean Directories *** -->
+	<!-- Deletes the existing Build and Distribution Directories -->
+	<target name="clean-build-dir">
+		<delete dir="${build.dir}" />
+	</target>
+	<!-- Deletes the existing Stubs Directories -->
+	<target name="clean-stubs">
+		<delete dir="${discovery-stubs.dir}" />
+		<delete dir="${organization-stubs.dir}" />
+	</target>
+	<target name="clean-temp">
+		<delete dir="${temp.dir}" />
+	</target>
+
+	<!-- *** Create Directories *** -->
+	<!-- Create the Build and Distribution Directories -->
+	<target name="make-build-dir">
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="${bin.dir}" />
+		<mkdir dir="${docs.dir}" />
+		<mkdir dir="${dist.dir}" />
+	</target>
+	
+	<!-- *** Compiles the Java Code *** -->
+	<target name="compile" depends="clean-build-dir, make-build-dir">
+		<javac source="1.6" srcdir="${src.dir}" destdir="${bin.dir}" classpathref="build.classpath">
+			<compilerarg value="-Xlint:unchecked"/>
+		</javac>
+	</target>
+
+	<!-- *** Creates Javadoc *** -->
+	<target name="docs" depends="compile">
+		<javadoc packagenames="src" sourcepath="${src.dir}" destdir="${docs.dir}">
+			<!-- Define which files / directory should get included, we include all -->
+			<fileset dir="${src.dir}">
+				<include name="**" />
+			</fileset>
+		</javadoc>
+	</target>
+
+	<!-- *** Creates the deployable JAR file  ***-->
+	<target name="jar" depends="compile">
+		<jar destfile="${dist.dir}\MSDCJavaConnect.jar" basedir="${build.dir}">
+			<manifest>
+				<attribute name="Main-Class" value="TestDynamicsCRM2011JavaConnect.main" />
+			</manifest>
+		</jar>
+	</target>
+	
+	<!-- *** Integration Stubs generation *** -->
+	<!-- reference: http://axis.apache.org/axis2/java/core/tools/CodegenToolReference.html -->
+	<!-- MSDC Discovery Stub generation -->
+	<target name="gen-discovery-stub">
+		<taskdef name="axis2-wsdl2java" classname="org.apache.axis2.tool.ant.AntCodegenTask" classpathref="build.classpath" /> 
+		<axis2-wsdl2java wsdlfilename="https://yourCRMOrg.crm.dynamics.com/XRMServices/2011/Discovery.svc?wsdl" 
+			packageName="com.cloudliner.integration.msdc11.stubs.discovery" output="${temp.dir}" syncOnly="true"/> 
+	</target>
+	<!-- MSDC Organization Stub generation -->
+	<target name="gen-organization-stub">
+		<taskdef name="axis2-wsdl2java" classname="org.apache.axis2.tool.ant.AntCodegenTask" classpathref="build.classpath" /> 
+		<axis2-wsdl2java wsdlfilename="https://yourCRMOrg.crm.dynamics.com/XRMServices/2011/Organization.svc?wsdl" 
+			packageName="com.cloudliner.integration.msdc11.stubs.organization" output="${temp.dir}" syncOnly="true"/> 
+	</target>
+	
+	<!-- All Stubs generation -->
+	<target name="gen-stubs" depends="clean-temp, clean-stubs, gen-discovery-stub, gen-organization-stub">
+		<description>Generate all Web Services Stubs</description>
+		<copy todir="${src.dir}">
+			<fileset dir="${temp.dir}/src"/>
+		</copy>
+		<delete dir="${temp.dir}" />
+	</target>	
+	
+	<!--  ### Main Target ###  -->	
+	<target name="main" depends="compile, jar">
+		<description>Main Task: Project Compilation, Build and Documentation</description>
+	</target>
+
+</project>
